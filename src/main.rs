@@ -68,8 +68,8 @@ fn main() -> Result<()> {
     conn.execute(
         "CREATE TABLE location (
                   tst INTEGER PRIMARY KEY,
-                  lat            TEXT NOT NULL,
-                  lon BLOB,
+                  lat DECIMAL(8, 6),
+                  lon DECIMAL(9,6),
                   acc INTEGER,
                   alt INTEGER,
                   vac INTEGER,
