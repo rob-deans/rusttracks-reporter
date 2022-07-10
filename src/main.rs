@@ -1,32 +1,21 @@
 use std::{env, process, format, time::Duration};
 use futures::{executor::block_on, stream::StreamExt};
-use serde::{Deserialize, Serialize};
-// use serde_json::Result;
 use rusqlite::{params, Connection, Result};
 
 extern crate paho_mqtt as mqtt;
 
+mod location;
+
+use crate::location::LocationPayload;
+
+// TODO: Env var for this?
 const MQTT_CLIENT_ID: &str = "rust_async_subscribe";
+// TODO: Env var for this?
 const TOPIC: &str = "owntracks/hass/rob";
 const QOS: i32 = 1;
+// TODO: Env var for this?
+const SQLITE_DB_FILE: &str = "/data/owntracks.db";
 
-#[derive(Deserialize, Serialize, Debug)]
-struct LocationPayload {
-    _type: String,
-    acc: u32,
-    alt: u32,
-    batt: u8,
-    bs: u8,
-    conn: char,
-    created_at: u32,
-    lat: f64,
-    lon: f64,
-    m: u8,
-    tid: String,
-    tst: u32,
-    vac: u32,
-    vel: u16
-}
 
 fn handle_payload_msg(conn: &Connection, msg: mqtt::Message) {
     let payload: LocationPayload = serde_json::from_str(&msg.payload_str()).unwrap_or_else(|err| {
@@ -62,12 +51,11 @@ fn main() -> Result<()> {
         process::exit(1);
     });
 
-    let conn = Connection::open_in_memory()?;
-
+    let conn = Connection::open(&SQLITE_DB_FILE)?;
 
     conn.execute(
-        "CREATE TABLE location (
-                  tst INTEGER PRIMARY KEY,
+        "CREATE TABLE IF NOT EXISTS location (
+                  tst INTEGER NOT NULL,
                   lat DECIMAL(8, 6),
                   lon DECIMAL(9,6),
                   acc INTEGER,
@@ -76,13 +64,14 @@ fn main() -> Result<()> {
                   batt INTEGER,
                   tid TEXT NOT NULL,
                   vel INTEGER,
-                  created_at INTEGER
+                  created_at INTEGER,
+                  PRIMARY KEY (tst, tid)
                   )",
         [],
     )?;
 
     let host = format!("tcp://{mqtt_url}:{mqtt_port}");
-    println!("{}", host);
+    println!("Host URL: {host}");
 
      // Create the client. Use an ID for a persistent session.
     // A real system should try harder to use a unique ID.
@@ -102,13 +91,10 @@ fn main() -> Result<()> {
         let mut strm = cli.get_stream(25);
 
         // Define the set of options for the connection
-        let lwt = mqtt::Message::new("test", "Async subscriber lost connection", mqtt::QOS_1);
-
         let conn_opts = mqtt::ConnectOptionsBuilder::new()
             .keep_alive_interval(Duration::from_secs(30))
             .mqtt_version(mqtt::MQTT_VERSION_3_1_1)
             .clean_session(false)
-            .will_message(lwt)
             .user_name(mqtt_username)
             .password(mqtt_password)
             .finalize();
