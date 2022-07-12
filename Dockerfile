@@ -1,13 +1,7 @@
-FROM rust:1.62-alpine
+FROM rust:1.62
 
-RUN apk upgrade --update-cache --available && \
-    apk add openssl && \
-    rm -rf /var/cache/apk/*
-
-
-# RUN apt-get update -y && apt-get upgrade -y
-# RUN apt-get install cmake -y
-# RUN apk add cm
+RUN apt-get update -y && apt-get upgrade -y
+RUN apt-get install cmake -y
 
 WORKDIR /usr/src/rusttracks-recorder
 
