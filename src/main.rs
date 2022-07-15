@@ -1,38 +1,38 @@
-use std::{env, process, format, time::Duration};
-use futures::{executor::block_on, stream::StreamExt};
-use rusqlite::{params, Connection, Result};
-
+extern crate openssl;
+extern crate diesel;
 extern crate paho_mqtt as mqtt;
 
-mod location;
+use std::{env, process, format, time::Duration};
+use futures::{executor::block_on, stream::StreamExt};
+// use rusqlite::{params, Connection, Result};
 
-use crate::location::LocationPayload;
+
+use rusttracks_recorder::{establish_connection, insert_payload};
+
 
 // TODO: Env var for this?
 const MQTT_CLIENT_ID: &str = "rust_async_subscribe";
 // TODO: Env var for this?
 const TOPIC: &str = "owntracks/hass/rob";
 const QOS: i32 = 1;
-// TODO: Env var for this?
-const SQLITE_DB_FILE: &str = "/data/owntracks.db";
 
 
-fn handle_payload_msg(conn: &Connection, msg: mqtt::Message) {
-    let payload: LocationPayload = serde_json::from_str(&msg.payload_str()).unwrap_or_else(|err| {
-        println!("Error parsing payload string: {:?}", err);
-        process::exit(1);
-    });
-    println!("{}", msg.payload_str());
-    if let Err(err) = conn.execute(
-        "INSERT INTO location (tst, lat, lon, acc, alt, vac, batt, tid, vel, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
-        params![payload.tst, payload.lat, payload.lon, payload.acc, payload.alt, payload.vac, payload.batt, payload.tid, payload.vel, payload.created_at]
-    ){
-        println!("{}", err)
-    };
-}
+// fn handle_payload_msg(conn: &Connection, msg: mqtt::Message) {
+//     let payload: LocationPayload = serde_json::from_str(&msg.payload_str()).unwrap_or_else(|err| {
+//         println!("Error parsing payload string: {:?}", err);
+//         process::exit(1);
+//     });
+//     println!("{}", msg.payload_str());
+//     if let Err(err) = conn.execute(
+//         "INSERT INTO location (tst, lat, lon, acc, alt, vac, batt, tid, vel, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+//         params![payload.tst, payload.lat, payload.lon, payload.acc, payload.alt, payload.vac, payload.batt, payload.tid, payload.vel, payload.created_at]
+//     ){
+//         println!("{}", err)
+//     };
+// }
 
 
-fn main() -> Result<()> {
+fn main() {
 
     let mqtt_url: String = env::var("MQTT_URL").unwrap_or_else(|err| {
         println!("{}", err);
@@ -51,24 +51,25 @@ fn main() -> Result<()> {
         process::exit(1);
     });
 
-    let conn = Connection::open(&SQLITE_DB_FILE)?;
+    // let conn = Connection::open_in_memory()?;
+    let conn = establish_connection();
 
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS location (
-                  tst INTEGER NOT NULL,
-                  lat DECIMAL(8, 6),
-                  lon DECIMAL(9,6),
-                  acc INTEGER,
-                  alt INTEGER,
-                  vac INTEGER,
-                  batt INTEGER,
-                  tid TEXT NOT NULL,
-                  vel INTEGER,
-                  created_at INTEGER,
-                  PRIMARY KEY (tst, tid)
-                  )",
-        [],
-    )?;
+    // conn.execute(
+    //     "CREATE TABLE IF NOT EXISTS location (
+    //               tst INTEGER NOT NULL,
+    //               lat DECIMAL(8, 6),
+    //               lon DECIMAL(9,6),
+    //               acc INTEGER,
+    //               alt INTEGER,
+    //               vac INTEGER,
+    //               batt INTEGER,
+    //               tid TEXT NOT NULL,
+    //               vel INTEGER,
+    //               created_at INTEGER,
+    //               PRIMARY KEY (tst, tid)
+    //               )",
+    //     [],
+    // )?;
 
     let host = format!("tcp://{mqtt_url}:{mqtt_port}");
     println!("Host URL: {host}");
@@ -116,7 +117,10 @@ fn main() -> Result<()> {
 
         while let Some(msg_opt) = strm.next().await {
             if let Some(msg) = msg_opt {
-                handle_payload_msg(&conn, msg)
+                // handle_payload_msg(&conn, msg)
+                println!("{}", msg);
+                insert_payload(&conn, msg);
+
             }
             else {
                 // A "None" means we were disconnected. Try to reconnect...
@@ -134,7 +138,5 @@ fn main() -> Result<()> {
     }) {
         eprintln!("{}", err);
     }
-
-    Ok(())
 
 }
