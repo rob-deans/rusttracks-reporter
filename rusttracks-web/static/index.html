@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.15.1/css/ol.css" type="text/css">
+    <link rel="stylesheet" href="index.css" type="text/css">
+    <!-- <style src="index.css"></style> -->
+    <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.15.1/build/ol.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <title>Rusttracks</title>
+</head>
+
+<body>
+    <!-- <h2>My Map</h2> -->
+    <div id="map" class="map">
+        <div id="popup" class="ol-popup">
+            <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+            <div id="popup-content"></div>
+        </div>
+    </div>
+    <div id="card">
+        <div id="header" class="collapsed">
+            <!-- <h3>Rusttracks</h3> -->
+            <button class="collapsible">Rusttracks</button>
+            <div class="content">
+                <div class="calander-choice">
+                    <div class="data-choice" id="start-date">
+                        <div>
+                            <p class="option-title">Start Date</p>
+                        </div>
+                        <input type="date" name="date" class="calander-selection" id="start-date-input">
+                    </div>
+                    <div class="data-choice" id="end-date">
+                        <div>
+                            <p class="option-title">End Date</p>
+                        </div>
+                        <input type="date" name="date" class="calander-selection" id="end-date-input">
+                    </div>
+                </div>
+                <div>Min accuracy</div>
+                <input type="range" min="50" max="500" value="100">
+                <div id="display-options-wrapper">
+                    <div style="padding:3px;">Display Options</div>
+                    <div id="button-holder">
+                        <button id="dots" class="display-option-btn-clicked"
+                            onclick="displayOption('dots')">Dots</button>
+                        <button id="path" class="display-option-btn" onclick="displayOption('path')">Path</button>
+                    </div>
+                </div>
+
+                <button id="get-location-btn" onclick="getLocations()">Get Locations</button>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        var map = new ol.Map({
+            target: 'map',
+            layers: [
+                new ol.layer.Tile({
+                    source: new ol.source.OSM()
+                })
+            ],
+            view: new ol.View({
+                center: ol.proj.fromLonLat([-0.14, 51.5]),
+                zoom: 10
+            })
+        });
+
+
+        // const style = {
+        //     'Point': new ol.Style({
+        //         image: new ol.CircleStyle({
+        //             fill: new ol.Fill({
+        //                 color: 'rgba(255,255,0,0.4)',
+        //             }),
+        //             radius: 5,
+        //             stroke: new ol.Stroke({
+        //                 color: '#ff0',
+        //                 width: 1,
+        //             }),
+        //         }),
+        //     }),
+        //     'LineString': new ol.Style({
+        //         stroke: new ol.Stroke({
+        //             color: '#f00',
+        //             width: 3,
+        //         }),
+        //     }),
+        //     'MultiLineString': new ol.Style({
+        //         stroke: new ol.Stroke({
+        //             color: '#0f0',
+        //             width: 3,
+        //         }),
+        //     }),
+        // };
+
+
+        function getLocations() {
+            axios.get("http://localhost:8000/api/locations")
+                .then(response => {
+                    var markers = [];
+                    for (let i = 0; i < response.data.length; i++) {
+
+                        markers.push(new ol.Feature({
+                            geometry: new ol.geom.Point(ol.proj.transform([response.data[i].lon, response.data[i].lat], 'EPSG:4326',
+                                'EPSG:3857')),
+                            // name: 'test',
+                            timestamp: response.data[i].tst,
+                        }));
+
+                    };
+
+                    var vectorSource = new ol.source.Vector({
+                        features: markers
+                    });
+
+                    const fill = new ol.style.Fill({
+                        color: 'rgba(255,255,255,0.4)',
+                    });
+                    const stroke = new ol.style.Stroke({
+                        color: '#3399CC',
+                        width: 1.25,
+                    });
+
+                    var iconStyle = new ol.style.Style({
+                        image: new ol.style.Circle({
+                            fill: fill,
+                            stroke: stroke,
+                            radius: 5
+                        }),
+                        fill: fill,
+                        stroke: stroke
+                    });
+
+
+                    var vectorLayer = new ol.layer.Vector({
+                        source: vectorSource,
+                        style: iconStyle
+                    });
+
+                    map.addLayer(vectorLayer);
+                    console.log(markers);
+                    map.setView(new ol.View({
+                        center: markers[0].getGeometry().flatCoordinates,
+                        zoom: 15
+                    }))
+
+                })
+
+        };
+
+        function doBounce(location) {
+            // bounce by zooming out one level and back in
+            var bounce = ol.animation.bounce({
+                resolution: map.getView().getResolution() * 2
+            });
+            // start the pan at the current center of the map
+            var pan = ol.animation.pan({
+                source: map.getView().getCenter()
+            });
+            map.beforeRender(bounce);
+            map.beforeRender(pan);
+            // when we set the center to the new location, the animated move will
+            // trigger the bounce and pan effects
+            map.getView().setCenter(location);
+        }
+
+        function displayOption(clickedBtn) {
+            buttonToChange = clickedBtn == "dots" ? "path" : "dots"
+            console.log(buttonToChange)
+            document.getElementById(buttonToChange).setAttribute("class", "display-option-btn");
+            document.getElementById(clickedBtn).setAttribute("class", "display-option-btn-clicked");
+        }
+
+
+        // Collapsible 
+        var coll = document.getElementsByClassName("collapsible");
+        var i;
+
+        for (i = 0; i < coll.length; i++) {
+            coll[i].addEventListener("click", function () {
+                this.classList.toggle("active");
+                document.getElementById("header").classList.toggle("collapsed");
+                var content = this.nextElementSibling;
+                if (content.style.maxHeight) {
+                    content.style.maxHeight = null;
+                } else {
+                    content.style.maxHeight = content.scrollHeight + "px";
+                }
+            });
+        }
+
+
+
+        const container = document.getElementById('popup');
+        const popupContent = document.getElementById('popup-content');
+        var popup = new ol.Overlay({
+            element: container,
+            positioning: 'bottom-center',
+            stopEvent: false,
+            offset: [0, -10],
+        });
+        // popup.setPosition(coordinate);
+        map.addOverlay(popup);
+
+
+        map.on('pointermove', (event) => {
+            var feature = map.forEachFeatureAtPixel(event.pixel,
+                function (feature) {
+                    return feature;
+                });
+            if (feature) {
+                console.log(feature)
+                // TODO: Show features
+                let coords = feature.getGeometry().flatCoordinates;
+                popupContent.innerHTML = ol.proj.toLonLat(coords);
+                popup.setPosition(coords);
+            } else {
+                // container.destroy
+                console.log("here")
+                popupContent.innerHTML = "";
+            }
+        });
+
+    </script>
+    <!-- <script type="module" src="main.js"></script> -->
+</body>
+
+</html>

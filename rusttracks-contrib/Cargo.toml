@@ -1,0 +1,15 @@
+[package]
+name = "rusttracks-contrib"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+serde = { version = "1.0.138", features = ["derive"] }
+serde_json = "1.0.82"
+diesel = { version = "1.4.4", features = ["sqlite", "r2d2", "numeric"] }
+diesel_migrations = "1.4.0"
+openssl = "*"
+openssl-probe = "0.1.2"
+chrono = "0.4.19"
