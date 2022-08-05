@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS location (
-    tst INTEGER NOT NULL,
+    tst BIGINT NOT NULL,
     lat DECIMAL(8, 6) NOT NULL,
     lon DECIMAL(9,6) NOT NULL,
     acc INTEGER,

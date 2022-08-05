@@ -1,6 +1,6 @@
 table! {
     location (tst, tid) {
-        tst -> Integer,
+        tst -> BigInt,
         lat -> Double,
         lon -> Double,
         acc -> Nullable<Integer>,
