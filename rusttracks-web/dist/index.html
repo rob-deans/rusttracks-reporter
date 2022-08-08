@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.15.1/css/ol.css" type="text/css">
+    <link rel="stylesheet" href="index.css" type="text/css">
+    <!-- <style src="index.css"></style> -->
+    <!-- <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.15.1/build/ol.js"></script> -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script> -->
+    <title>Rusttracks</title>
+</head>
+
+<body>
+    <!-- <h2>My Map</h2> -->
+    <div id="map" class="map">
+        <div id="popup" class="ol-popup">
+            <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+            <div id="popup-content"></div>
+        </div>
+    </div>
+    <div id="card">
+        <div id="header" class="collapsed">
+            <!-- <h3>Rusttracks</h3> -->
+            <button class="collapsible">Rusttracks</button>
+            <div class="content">
+                <div class="calander-choice">
+                    <div class="data-choice" id="start-date">
+                        <div>
+                            <p class="option-title">Start Date</p>
+                        </div>
+                        <input type="datetime-local" name="date" class="calander-selection" id="start-date-input">
+                    </div>
+                    <div class="data-choice" id="end-date">
+                        <div>
+                            <p class="option-title">End Date</p>
+                        </div>
+                        <input type="datetime-local" name="date" class="calander-selection" id="end-date-input">
+                    </div>
+                </div>
+                <div>Min accuracy</div>
+                <input id="acc-slider" type="range" min="50" max="500" value="100">
+                <div id="acc-value">100m</div>
+                <div id="display-options-wrapper">
+                    <div style="padding:3px;">Display Options</div>
+                    <div id="button-holder">
+                        <button id="dots" class="display-option-btn-clicked"
+                            onclick="displayOption('dots')">Dots</button>
+                        <button id="path" class="display-option-btn" onclick="displayOption('path')">Path</button>
+                    </div>
+                </div>
+
+                <button id="get-location-btn">Get Locations</button>
+            </div>
+        </div>
+    </div>
+    <script src="main.js"></script>
+</body>
+
+</html>

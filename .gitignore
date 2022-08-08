@@ -22,3 +22,7 @@ Cargo.lock
 .env
 *.db
 *.tar
+dist/
+!dist/index.html
+
+node_modules/
