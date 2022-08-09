@@ -3,7 +3,7 @@ import { Vector as VectorLayer } from 'ol/layer';
 import Tile from 'ol/layer/Tile';
 import { OSM, Vector } from 'ol/source';
 import { transform, toLonLat, fromLonLat } from 'ol/proj';
-import { Point, MultiLineString } from 'ol/geom';
+import { Point, MultiLineString, LineString } from 'ol/geom';
 import Feature from 'ol/Feature';
 import { fromString } from 'ol/color';
 import { Circle, Fill, Stroke, Style } from 'ol/style';
@@ -118,8 +118,8 @@ function drawStyle(feature) {
         for (var i = 0; i < coordinates.length - 1; i++) {
             let lineColour = colour_gen.next().value;
             styles.push(
-                new ol.style.Style({
-                    geometry: new geom.LineString(coordinates.slice(i, i + 2)),
+                new Style({
+                    geometry: new LineString(coordinates.slice(i, i + 2)),
                     stroke: new Stroke({
                         color: lineColour,
                     })
@@ -132,18 +132,20 @@ function drawStyle(feature) {
 }
 
 function displayOption(clickedBtn) {
-    buttonToChange = clickedBtn == "dots" ? "path" : "dots"
+    let buttonToChange = clickedBtn == "dots" ? "path" : "dots"
     document.getElementById(buttonToChange).setAttribute("class", "display-option-btn");
     document.getElementById(clickedBtn).setAttribute("class", "display-option-btn-clicked");
-    if (clickedBtn == "path") {
-        map.removeLayer(vectorDotsLayer);
-        map.addLayer(vectorPathLayer);
-    } else if (clickedBtn == "dots") {
-        map.removeLayer(vectorPathLayer);
-        map.addLayer(vectorDotsLayer);
-    } else if (clickedBtn == "pathanddots") {
-        map.addLayer(vectorPathLayer);
-        map.addLayer(vectorDotsLayer);
+    if (vectorDotsLayer !== undefined && vectorPathLayer !== undefined) {
+        if (clickedBtn == "path") {
+            map.removeLayer(vectorDotsLayer);
+            map.addLayer(vectorPathLayer);
+        } else if (clickedBtn == "dots") {
+            map.removeLayer(vectorPathLayer);
+            map.addLayer(vectorDotsLayer);
+        } else if (clickedBtn == "pathanddots") {
+            map.addLayer(vectorPathLayer);
+            map.addLayer(vectorDotsLayer);
+        }
     }
 }
 
@@ -187,6 +189,7 @@ function geomPointsFromMarkers(markers) {
     return geom_points;
 
 }
+
 function createPathLayer(markers) {
     let geomPoints = geomPointsFromMarkers(markers);
     var geomLineStrings = new MultiLineString([geomPoints]);
@@ -290,8 +293,13 @@ accSlider.addEventListener('change', function () {
 });
 
 let locationBtn = document.getElementById('get-location-btn');
-locationBtn.addEventListener("click", function () {
-    getLocations();
+locationBtn.addEventListener("click", getLocations);
+
+const renderBtns = document.querySelectorAll('.display-option');
+
+renderBtns.forEach(btn => {
+    btn.addEventListener('click', () => displayOption(btn.id));
 });
+
 
 getLocations();
