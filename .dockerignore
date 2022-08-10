@@ -1,0 +1,6 @@
+**/target/
+Dockerfile
+**/*.db
+README.md
+.gitignore
+**/node_modules/

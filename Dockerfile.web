@@ -1,0 +1,39 @@
+ARG BASE_IMAGE=messense/rust-musl-cross:armv7-musleabihf
+
+FROM node:18-alpine as frontend
+
+ARG api_url
+ENV API_URL=$api_url
+
+WORKDIR /app
+
+COPY rusttracks-web .
+
+RUN npm i
+
+RUN npx webpack --mode=production
+
+
+FROM ${BASE_IMAGE} AS builder
+
+WORKDIR /app
+
+COPY --from=frontend /app .
+COPY rusttracks-contrib /rusttracks-contrib
+
+RUN cargo build --release
+
+FROM alpine:3.12
+
+ENV RUST_BACKTRACE=full
+
+
+WORKDIR /app
+COPY --from=builder /app/target/armv7-unknown-linux-musleabihf/release/rusttracks-web ./
+COPY --from=builder /app/dist ./dist
+
+ENV ROCKET_ENV=prod
+ENV ROCKET_ADDRESS=0.0.0.0
+EXPOSE 8000
+
+CMD ["./rusttracks-web"]

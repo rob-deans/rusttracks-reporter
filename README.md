@@ -10,8 +10,8 @@ Currently utilising MQTT and SQLite.
 
 ## Feature map
 - [x] Record all MQTT messages to SQLite
-- [ ] Set up API backend
-- [ ] Set up frontend to plot locations on map
+- [x] Set up API backend
+- [x] Set up frontend to plot locations on map
 
 
 ## Env vars
