@@ -18,16 +18,16 @@ pub fn establish_connection(database_url: &String) -> SqliteConnection {
 }
 
 pub fn insert_payload(conn: &SqliteConnection, payload_msg: mqtt::Message) {
-    let payload: NewLocationPayload = serde_json::from_str(&payload_msg.payload_str()).unwrap_or_else(|err| {
-        println!("Error parsing payload string: {:?}", err);
-        process::exit(1);
-    });
-    if let Err(err) = diesel::insert_into(location::table)
-        .values(&payload)
-        .execute(conn) {
-            println!("{}", err);
-        };
-        
+    match serde_json::from_str::<NewLocationPayload>(&payload_msg.payload_str()) {
+        Ok(payload) => {
+            if let Err(err) = diesel::insert_into(location::table)
+                .values(&payload)
+                .execute(conn) {
+                    println!("{}", err);
+                };
+        },
+        Err(e) => println!("{}", e),
+    }
 }
 
 
