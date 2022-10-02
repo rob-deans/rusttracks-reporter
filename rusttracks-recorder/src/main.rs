@@ -79,7 +79,7 @@ fn main() {
 
     if let Err(err) = block_on(async {
         cli = setup_client(cli, conn_opts, topic).await;
-        info!("{}", cli.is_connected());
+        info!("Is connected: {}", cli.is_connected());
         
 
         if let Err(err) = listen(cli, strm, conn).await {
