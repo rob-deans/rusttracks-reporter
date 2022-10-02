@@ -12,6 +12,7 @@ RUN cargo build --release
 FROM alpine:3.12
 
 ENV RUST_BACKTRACE=full
+ENV RUST_LOG=rusttracks_recorder=INFO
 
 WORKDIR /app
 COPY --from=builder /app/target/armv7-unknown-linux-musleabihf/release/rusttracks-recorder ./

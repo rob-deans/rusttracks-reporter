@@ -19,6 +19,8 @@ openssl-probe = "0.1.2"
 rocket = { version = "0.5.0-rc.2", features = ["json"] }
 tokio = { version = "1.20.0", features = ["full"] }
 rusttracks-contrib = { path = "../rusttracks-contrib" }
+log = "0.4.17"
+env_logger = "0.9.1"
 
 [dependencies.rocket_sync_db_pools]
 version = "0.1.0-rc.2"

@@ -1,10 +1,10 @@
-#[macro_use] extern crate diesel;
 extern crate paho_mqtt as mqtt;
 
 use diesel::prelude::*;
 use diesel::sqlite::SqliteConnection;
-use std::{process,time::Duration};
+use std::{time::Duration};
 use futures::{stream::StreamExt};
+use log::{info, error};
 
 use rusttracks_contrib::models::NewLocationPayload;
 use rusttracks_contrib::schema::location;
@@ -23,16 +23,16 @@ pub fn insert_payload(conn: &SqliteConnection, payload_msg: mqtt::Message) {
             if let Err(err) = diesel::insert_into(location::table)
                 .values(&payload)
                 .execute(conn) {
-                    println!("{}", err);
+                    error!("{}", err);
                 };
         },
-        Err(e) => println!("{}", e),
+        Err(e) => error!("{}", e),
     }
 }
 
 
 pub async fn listen(cli: mqtt::AsyncClient, mut strm: mqtt::AsyncReceiver<Option<mqtt::Message>>, conn: SqliteConnection) -> Result<(), mqtt::Error> {
-    println!("Waiting for messages...");
+    info!("Waiting for messages...");
 
     // Note that we're not providing a way to cleanly shut down and
     // disconnect. Therefore, when you kill this app (with a ^C or
@@ -45,9 +45,9 @@ pub async fn listen(cli: mqtt::AsyncClient, mut strm: mqtt::AsyncReceiver<Option
         }
         else {
             // A "None" means we were disconnected. Try to reconnect...
-            println!("Lost connection. Attempting reconnect.");
+            info!("Lost connection. Attempting reconnect.");
             while let Err(err) = cli.reconnect().await {
-                println!("Error reconnecting: {}", err);
+                error!("Error reconnecting: {}", err);
                 // For tokio use: tokio::time::delay_for()
                 async_std::task::sleep(Duration::from_millis(1000)).await;
             }
