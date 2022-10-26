@@ -2,19 +2,15 @@ extern crate paho_mqtt as mqtt;
 
 use diesel::prelude::*;
 use diesel::sqlite::SqliteConnection;
-use std::{time::Duration};
-use futures::{stream::StreamExt};
-use log::{info, error};
+use futures::stream::StreamExt;
+use log::{error, info};
+use std::time::Duration;
 
 use rusttracks_contrib::models::NewLocationPayload;
 use rusttracks_contrib::schema::location;
 
-
 pub fn establish_connection(database_url: &String) -> SqliteConnection {
-
-    // let database_url = env::var("SQLITE_DB_URL").expect("SQLITE_DB_URL must be set");
-    SqliteConnection::establish(&database_url)
-        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
+    SqliteConnection::establish(&database_url).expect("Error connecting to {database_url}")
 }
 
 pub fn insert_payload(conn: &SqliteConnection, payload_msg: mqtt::Message) {
@@ -22,16 +18,20 @@ pub fn insert_payload(conn: &SqliteConnection, payload_msg: mqtt::Message) {
         Ok(payload) => {
             if let Err(err) = diesel::insert_into(location::table)
                 .values(&payload)
-                .execute(conn) {
-                    error!("{}", err);
-                };
-        },
+                .execute(conn)
+            {
+                error!("{}", err);
+            };
+        }
         Err(e) => error!("{}", e),
     }
 }
 
-
-pub async fn listen(cli: mqtt::AsyncClient, mut strm: mqtt::AsyncReceiver<Option<mqtt::Message>>, conn: SqliteConnection) -> Result<(), mqtt::Error> {
+pub async fn listen(
+    cli: mqtt::AsyncClient,
+    mut strm: mqtt::AsyncReceiver<Option<mqtt::Message>>,
+    conn: SqliteConnection,
+) -> Result<(), mqtt::Error> {
     info!("Waiting for messages...");
 
     // Note that we're not providing a way to cleanly shut down and
@@ -42,8 +42,7 @@ pub async fn listen(cli: mqtt::AsyncClient, mut strm: mqtt::AsyncReceiver<Option
     while let Some(msg_opt) = strm.next().await {
         if let Some(msg) = msg_opt {
             insert_payload(&conn, msg);
-        }
-        else {
+        } else {
             // A "None" means we were disconnected. Try to reconnect...
             info!("Lost connection. Attempting reconnect.");
             while let Err(err) = cli.reconnect().await {
